@@ -39,7 +39,7 @@ router.post(
   },
 );
 
-router.use(authenticate);
+router.use(['/applications', '/documents'], authenticate);
 
 // ── Applications ──
 router.get(

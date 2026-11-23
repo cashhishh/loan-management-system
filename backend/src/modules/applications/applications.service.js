@@ -142,7 +142,10 @@ export async function list(user, q) {
     prisma.loanApplication.count({ where }),
     prisma.loanApplication.findMany({
       where,
-      orderBy: [{ [q.sort]: { sort: q.order, nulls: 'last' } }, { applicationNo: 'desc' }],
+      orderBy: [
+        { [q.sort]: q.sort === 'submittedAt' ? { sort: q.order, nulls: 'last' } : q.order },
+        { applicationNo: 'desc' },
+      ],
       ...toSkipTake(q),
       include: {
         applicant: { select: { id: true, name: true, email: true } },
