@@ -408,7 +408,12 @@ npm test
 
 The repo deploys as **one Docker service**: the API serves the built SPA, so there's a single origin, no CORS problems, and first-party cookies.
 
-**Render (blueprint included):** New → Blueprint → select this repo. `render.yaml` creates the web service and a free PostgreSQL database, and generates the JWT secrets. The container runs `prisma migrate deploy` and the idempotent seed on start. Set `CLIENT_ORIGIN` to the service URL Render gives you.
+**Render (blueprint included, no Docker needed):** New → Blueprint → select this repo. `render.yaml` creates a Node web service and a free PostgreSQL database, and generates the JWT secrets. It uses the root `package.json` scripts:
+
+- `npm run build`: builds the React app and installs the API's dependencies.
+- `npm start`: runs `prisma migrate deploy` and the idempotent seed, then starts Express, which serves both the API and the SPA.
+
+The same two commands work on any Node host (Railway, Fly, a VM). The Dockerfile is an alternative for container hosts.
 
 **Split hosting** (e.g. Vercel frontend + Render API): set `VITE_API_URL=https://<api>/api/v1` on the frontend, and on the API set `CLIENT_ORIGIN=https://<frontend>` and `COOKIE_SAMESITE=none`.
 
