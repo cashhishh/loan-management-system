@@ -1,0 +1,200 @@
+// Loan Management System — relational schema (PostgreSQL)
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  APPLICANT
+  OFFICER
+  ADMIN
+}
+
+enum LoanType {
+  PERSONAL
+  HOME
+  VEHICLE
+  BUSINESS
+}
+
+enum EmploymentType {
+  SALARIED
+  SELF_EMPLOYED
+  BUSINESS_OWNER
+  UNEMPLOYED
+}
+
+enum ApplicationStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  MORE_INFO_NEEDED
+  RECOMMENDED_APPROVAL
+  RECOMMENDED_REJECTION
+  APPROVED
+  REJECTED
+}
+
+enum DocumentType {
+  ID_PROOF
+  INCOME_PROOF
+  OTHER
+}
+
+enum InstallmentStatus {
+  PENDING
+  PAID
+  OVERDUE
+}
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(APPLICANT)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  applications     LoanApplication[] @relation("ApplicantApplications")
+  assignedReviews  LoanApplication[] @relation("OfficerReviews")
+  statusChanges    StatusHistory[]
+  uploadedDocs     Document[]
+  refreshTokens    RefreshToken[]
+  markedInstallments Installment[]
+
+  @@index([role, createdAt])
+}
+
+/// Refresh tokens are stored hashed and rotated on every use.
+/// Re-use of a revoked token revokes the whole family (token theft detection).
+model RefreshToken {
+  id        String    @id @default(uuid())
+  tokenHash String    @unique
+  family    String
+  userId    String
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([family])
+}
+
+model LoanApplication {
+  id            String            @id @default(uuid())
+  applicationNo Int               @unique @default(autoincrement())
+  applicantId   String
+  status        ApplicationStatus @default(DRAFT)
+  currentStep   Int               @default(1)
+
+  // Step 1 — personal details
+  fullName     String?
+  dateOfBirth  DateTime? @db.Date
+  panNumber    String?
+  addressLine  String?
+  city         String?
+  state        String?
+  pincode      String?
+
+  // Step 2 — loan details
+  loanType     LoanType?
+  amount       Decimal?  @db.Decimal(14, 2)
+  tenureMonths Int?
+  purpose      String?
+  /// Annual rate snapshotted at submission so later rate changes do not alter a live application.
+  interestRate Decimal?  @db.Decimal(5, 2)
+
+  // Step 3 — income details
+  monthlyIncome  Decimal?        @db.Decimal(14, 2)
+  employmentType EmploymentType?
+  employerName   String?
+
+  // Review data
+  assignedOfficerId String?
+  /// Latest eligibility result: { passed, checks[], evaluatedAt, evaluatedBy }
+  eligibility       Json?
+  officerNote       String?
+  adminRemarks      String?
+
+  submittedAt DateTime?
+  decidedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  applicant       User            @relation("ApplicantApplications", fields: [applicantId], references: [id])
+  assignedOfficer User?           @relation("OfficerReviews", fields: [assignedOfficerId], references: [id])
+  documents       Document[]
+  history         StatusHistory[]
+  installments    Installment[]
+
+  @@index([applicantId, status])
+  @@index([status, submittedAt])
+  @@index([loanType, status])
+  @@index([createdAt])
+}
+
+model Document {
+  id            String       @id @default(uuid())
+  applicationId String
+  type          DocumentType
+  originalName  String
+  storedName    String       @unique
+  mimeType      String
+  size          Int
+  uploadedById  String
+  createdAt     DateTime     @default(now())
+
+  application LoanApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  uploadedBy  User            @relation(fields: [uploadedById], references: [id])
+
+  @@index([applicationId, type])
+}
+
+/// Append-only audit trail: one row per status change (who, when, why).
+model StatusHistory {
+  id            String             @id @default(uuid())
+  applicationId String
+  fromStatus    ApplicationStatus?
+  toStatus      ApplicationStatus
+  action        String
+  note          String?
+  changedById   String
+  createdAt     DateTime           @default(now())
+
+  application LoanApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  changedBy   User            @relation(fields: [changedById], references: [id])
+
+  @@index([applicationId, createdAt])
+  @@index([changedById])
+}
+
+model Installment {
+  id            String            @id @default(uuid())
+  applicationId String
+  installmentNo Int
+  dueDate       DateTime          @db.Date
+  emiAmount     Decimal           @db.Decimal(14, 2)
+  principal     Decimal           @db.Decimal(14, 2)
+  interest      Decimal           @db.Decimal(14, 2)
+  balance       Decimal           @db.Decimal(14, 2)
+  status        InstallmentStatus @default(PENDING)
+  paidAt        DateTime?
+  markedById    String?
+  updatedAt     DateTime          @updatedAt
+
+  application LoanApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  markedBy    User?           @relation(fields: [markedById], references: [id])
+
+  @@unique([applicationId, installmentNo])
+  @@index([status, dueDate])
+}
