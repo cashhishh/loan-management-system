@@ -1,0 +1,12 @@
+{
+  "name": "loandesk",
+  "private": true,
+  "description": "Loan Management System — monorepo scripts for building and running the API + SPA as one Node service",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "npm ci --prefix frontend --include=dev && npm run build --prefix frontend && npm ci --prefix backend --omit=dev",
+    "start": "cd backend && npx prisma migrate deploy && node prisma/seed.js && node src/server.js"
+  }
+}
