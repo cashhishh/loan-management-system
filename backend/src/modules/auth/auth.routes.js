@@ -23,10 +23,13 @@ const registerSchema = z.object({
 const loginSchema = z.object({ email, password: z.string().min(1, 'Password is required') });
 
 const COOKIE = 'lms_rt';
+// Default deploy serves the SPA from the API origin, so SameSite=Lax works.
+// For a split deploy (e.g. Vercel + Render) set COOKIE_SAMESITE=none (requires HTTPS).
+const sameSite = process.env.COOKIE_SAMESITE || 'lax';
 const cookieOptions = {
   httpOnly: true,
-  secure: env.isProd,
-  sameSite: process.env.COOKIE_SAMESITE || (env.isProd ? 'none' : 'lax'),
+  secure: process.env.COOKIE_SECURE ? process.env.COOKIE_SECURE === 'true' : env.isProd || sameSite === 'none',
+  sameSite,
   path: '/api/v1/auth',
 };
 
