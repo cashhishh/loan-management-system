@@ -6,6 +6,7 @@ import { prisma } from '../../lib/prisma.js';
 import { ApiError } from '../../utils/ApiError.js';
 
 const BCRYPT_ROUNDS = env.isTest ? 4 : 12;
+const REUSE_GRACE_MS = env.isTest ? 0 : 30_000;
 const DUMMY_HASH = bcrypt.hashSync('timing-safe-dummy', BCRYPT_ROUNDS);
 
 export const publicUser = (u) => ({
@@ -73,6 +74,14 @@ export async function refresh(rawToken) {
   if (!stored) throw ApiError.unauthorized('Invalid refresh token');
 
   if (stored.revokedAt) {
+    // Grace window: a page reload or a second tab can present the previous token
+    // a moment after it was rotated (the browser never stored the new cookie).
+    // Treat that as a benign race and continue the family instead of nuking it.
+    const sinceRevoked = Date.now() - stored.revokedAt.getTime();
+    if (sinceRevoked < REUSE_GRACE_MS && stored.expiresAt > new Date() && stored.user.isActive) {
+      const next = await issueRefreshToken(stored.userId, stored.family);
+      return { user: publicUser(stored.user), accessToken: signAccessToken(stored.user), refresh: next };
+    }
     await prisma.refreshToken.updateMany({
       where: { family: stored.family, revokedAt: null },
       data: { revokedAt: new Date() },
@@ -87,7 +96,7 @@ export async function refresh(rawToken) {
     where: { id: stored.id, revokedAt: null },
     data: { revokedAt: new Date() },
   });
-  if (count === 0) throw ApiError.unauthorized('Refresh token already used');
+  if (count === 0 && REUSE_GRACE_MS === 0) throw ApiError.unauthorized('Refresh token already used');
 
   const next = await issueRefreshToken(stored.userId, stored.family);
   return {
