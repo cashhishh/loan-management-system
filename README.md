@@ -2,6 +2,8 @@
 
 A full-stack loan workflow: **applicants** apply and track their loans, **loan officers** review applications with a rule-based eligibility check, and **admins** make the final decision. Approved loans get an EMI repayment schedule automatically. Every status change is recorded in an audit trail.
 
+**Live demo:** https://loandesk-8d16.onrender.com. It runs on Render's free tier, so the first request after a period of inactivity can take about 50 seconds while the server wakes up.
+
 | | |
 |---|---|
 | **Frontend** | React 19 (Vite), Tailwind CSS v4, React Router, TanStack Query, React Hook Form + Zod |
