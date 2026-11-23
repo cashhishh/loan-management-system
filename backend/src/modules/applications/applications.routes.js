@@ -29,15 +29,11 @@ const router = Router();
 // ── Public product catalogue + EMI preview (no auth needed) ──
 router.get('/loan-products', (_req, res) => res.json({ data: LOAN_PRODUCTS }));
 
-router.post(
-  '/emi/preview',
-  validate({ body: emiPreviewSchema }),
-  (req, res) => {
-    const { loanType, amount, tenureMonths } = req.body;
-    const rate = LOAN_PRODUCTS[loanType].annualRate;
-    res.json({ data: { annualRate: rate, ...summarizeLoan(amount, rate, tenureMonths) } });
-  },
-);
+router.post('/emi/preview', validate({ body: emiPreviewSchema }), (req, res) => {
+  const { loanType, amount, tenureMonths } = req.body;
+  const rate = LOAN_PRODUCTS[loanType].annualRate;
+  res.json({ data: { annualRate: rate, ...summarizeLoan(amount, rate, tenureMonths) } });
+});
 
 router.use(['/applications', '/documents'], authenticate);
 

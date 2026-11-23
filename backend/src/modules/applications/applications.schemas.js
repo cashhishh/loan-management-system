@@ -33,7 +33,10 @@ const fields = {
   addressLine: z.string().trim().min(5, 'Address is too short').max(200),
   city: z.string().trim().min(2).max(60),
   state: z.string().trim().min(2).max(60),
-  pincode: z.string().trim().regex(/^[1-9][0-9]{5}$/, 'Pincode must be 6 digits'),
+  pincode: z
+    .string()
+    .trim()
+    .regex(/^[1-9][0-9]{5}$/, 'Pincode must be 6 digits'),
   loanType: z.enum(LOAN_TYPES),
   amount: z.coerce.number().positive('Amount must be positive').max(100_000_000),
   tenureMonths: z.coerce.number().int('Tenure must be whole months').min(1).max(360),
@@ -43,9 +46,7 @@ const fields = {
   employerName: z.string().trim().max(120),
 };
 
-const optionalFields = Object.fromEntries(
-  Object.entries(fields).map(([k, v]) => [k, v.nullable().optional()]),
-);
+const optionalFields = Object.fromEntries(Object.entries(fields).map(([k, v]) => [k, v.nullable().optional()]));
 
 /** PATCH /applications/:id — partial save of any step. */
 export const draftSchema = z

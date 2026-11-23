@@ -35,9 +35,7 @@ export function toCsv(app, installments) {
     lines.push('', 'Installment,Due date,EMI,Principal,Interest,Balance,Status');
     for (const i of installments) {
       lines.push(
-        [i.installmentNo, i.dueDate, i.emiAmount, i.principal, i.interest, i.balance, i.status]
-          .map(csvCell)
-          .join(','),
+        [i.installmentNo, i.dueDate, i.emiAmount, i.principal, i.interest, i.balance, i.status].map(csvCell).join(','),
       );
     }
   }
@@ -80,10 +78,21 @@ export function streamPdf(app, installments, res) {
       });
       doc.y = y + 14;
     };
-    drawRow(cols.map((c) => c[0]), true);
+    drawRow(
+      cols.map((c) => c[0]),
+      true,
+    );
     for (const i of installments) {
       drawRow(
-        [i.installmentNo, i.dueDate, money(i.emiAmount), money(i.principal), money(i.interest), money(i.balance), i.status],
+        [
+          i.installmentNo,
+          i.dueDate,
+          money(i.emiAmount),
+          money(i.principal),
+          money(i.interest),
+          money(i.balance),
+          i.status,
+        ],
         false,
       );
     }

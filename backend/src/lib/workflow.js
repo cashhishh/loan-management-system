@@ -94,7 +94,5 @@ export function checkTransition(action, currentStatus, role) {
 
 /** Actions a given role can take on an application in `status` (drives UI buttons). */
 export function availableActions(status, role) {
-  return ACTION_NAMES.filter(
-    (a) => ACTIONS[a].from.includes(status) && ACTIONS[a].roles.includes(role),
-  );
+  return ACTION_NAMES.filter((a) => ACTIONS[a].from.includes(status) && ACTIONS[a].roles.includes(role));
 }

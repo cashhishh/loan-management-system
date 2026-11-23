@@ -95,7 +95,14 @@ describe('Eligibility rules', () => {
 
   it('fails when the applicant would be too old at maturity', () => {
     const r = evaluateEligibility(
-      { ...good, loanType: 'HOME', dateOfBirth: '1968-01-01', amount: 3000000, tenureMonths: 240, monthlyIncome: 200000 },
+      {
+        ...good,
+        loanType: 'HOME',
+        dateOfBirth: '1968-01-01',
+        amount: 3000000,
+        tenureMonths: 240,
+        monthlyIncome: 200000,
+      },
       docs,
       now,
     );

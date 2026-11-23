@@ -159,11 +159,7 @@ export async function list(user, q) {
 
 export async function stats(user) {
   const where =
-    user.role === 'APPLICANT'
-      ? { applicantId: user.id }
-      : user.role === 'OFFICER'
-        ? { status: { not: 'DRAFT' } }
-        : {};
+    user.role === 'APPLICANT' ? { applicantId: user.id } : user.role === 'OFFICER' ? { status: { not: 'DRAFT' } } : {};
   const grouped = await prisma.loanApplication.groupBy({
     by: ['status'],
     where,

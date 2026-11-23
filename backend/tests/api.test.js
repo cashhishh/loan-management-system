@@ -52,7 +52,9 @@ describe('auth', () => {
   it('rejects weak passwords and duplicate emails', async () => {
     const weak = await api().post('/api/v1/auth/register').send({ name: 'X Y', email: 'x@test.io', password: 'short' });
     expect(weak.status).toBe(400);
-    const dup = await api().post('/api/v1/auth/register').send({ name: 'X Y', email: 'app@test.io', password: 'secret123' });
+    const dup = await api()
+      .post('/api/v1/auth/register')
+      .send({ name: 'X Y', email: 'app@test.io', password: 'secret123' });
     expect(dup.status).toBe(409);
   });
 
@@ -86,23 +88,21 @@ describe('loan lifecycle', () => {
     expect(create.body.data.status).toBe('DRAFT');
     appId = create.body.data.id;
 
-    const patch = await as(applicantToken)
-      .patch(`/api/v1/applications/${appId}`)
-      .send({
-        dateOfBirth: '1990-04-10',
-        panNumber: 'abcde1234f',
-        addressLine: '221B Baker Street',
-        city: 'Mumbai',
-        state: 'Maharashtra',
-        pincode: '400001',
-        loanType: 'PERSONAL',
-        amount: 300000,
-        tenureMonths: 24,
-        purpose: 'Home renovation',
-        monthlyIncome: 90000,
-        employmentType: 'SALARIED',
-        currentStep: 4,
-      });
+    const patch = await as(applicantToken).patch(`/api/v1/applications/${appId}`).send({
+      dateOfBirth: '1990-04-10',
+      panNumber: 'abcde1234f',
+      addressLine: '221B Baker Street',
+      city: 'Mumbai',
+      state: 'Maharashtra',
+      pincode: '400001',
+      loanType: 'PERSONAL',
+      amount: 300000,
+      tenureMonths: 24,
+      purpose: 'Home renovation',
+      monthlyIncome: 90000,
+      employmentType: 'SALARIED',
+      currentStep: 4,
+    });
     expect(patch.status).toBe(200);
     expect(patch.body.data.panNumber).toBe('ABCDE1234F');
   });
@@ -240,7 +240,10 @@ describe('loan lifecycle', () => {
   });
 
   it('records a full audit trail', async () => {
-    const rows = await prisma.statusHistory.findMany({ where: { applicationId: appId }, orderBy: { createdAt: 'asc' } });
+    const rows = await prisma.statusHistory.findMany({
+      where: { applicationId: appId },
+      orderBy: { createdAt: 'asc' },
+    });
     expect(rows.map((r) => r.action)).toEqual([
       'CREATE',
       'SUBMIT',

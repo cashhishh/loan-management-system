@@ -47,10 +47,7 @@ router.get(
       ...(q.isActive ? { isActive: q.isActive === 'true' } : {}),
       ...(q.q
         ? {
-            OR: [
-              { name: { contains: q.q, mode: 'insensitive' } },
-              { email: { contains: q.q, mode: 'insensitive' } },
-            ],
+            OR: [{ name: { contains: q.q, mode: 'insensitive' } }, { email: { contains: q.q, mode: 'insensitive' } }],
           }
         : {}),
     };

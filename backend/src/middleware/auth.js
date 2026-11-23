@@ -14,9 +14,7 @@ export async function authenticate(req, _res, next) {
     try {
       payload = jwt.verify(token, env.jwtAccessSecret);
     } catch (e) {
-      throw ApiError.unauthorized(
-        e.name === 'TokenExpiredError' ? 'Access token expired' : 'Invalid access token',
-      );
+      throw ApiError.unauthorized(e.name === 'TokenExpiredError' ? 'Access token expired' : 'Invalid access token');
     }
 
     const user = await prisma.user.findUnique({
